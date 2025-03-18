@@ -1,65 +1,73 @@
-using System;
-using System.IO;
-using System.Text;
-using System.Diagnostics;
-using System.Net.Http;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
-using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
+using Microsoft.Azure.Cosmos;
 
-public class BlobUploaderFunction
+public class CosmosDbUploaderFunction
 {
-    private readonly ILogger<BlobUploaderFunction> _logger;
-    private readonly BlobServiceClient _blobServiceClient;
-    private readonly HttpClient _httpClient;
+    private readonly ILogger<CosmosDbUploaderFunction> _logger;
+    private readonly CosmosClient _cosmosClient;
+    private readonly Container _container;
 
-    public BlobUploaderFunction(ILogger<BlobUploaderFunction> logger)
+    public CosmosDbUploaderFunction(ILogger<CosmosDbUploaderFunction> logger)
     {
         _logger = logger;
-        _blobServiceClient = new BlobServiceClient(Environment.GetEnvironmentVariable("AzureWebJobsStorage"));
-        _httpClient = new HttpClient();
-    }
 
-    [Function("BlobUploaderFunction")]
-    public async Task Run([TimerTrigger("0 */25 * * * *")] TimerInfo timer)
-    {
-        Stopwatch stopwatch = Stopwatch.StartNew();
-        string timestamp = DateTime.UtcNow.ToString("o"); // ISO 8601 format
-        string uniqueId = Guid.NewGuid().ToString(); // Unique file identifier
+        string cosmosDbConnectionString = Environment.GetEnvironmentVariable("COSMOSDB_CONNECTION_STRING");
+        string databaseName = Environment.GetEnvironmentVariable("COSMOSDB_DATABASE_NAME");
+        string containerName = Environment.GetEnvironmentVariable("COSMOSDB_CONTAINER_NAME");
 
-        string fileName = $"{DateTime.UtcNow:yyyy/MM/dd/HH}/{uniqueId}.json"; // Organized structure
+        if (string.IsNullOrEmpty(cosmosDbConnectionString))
+        {
+            _logger.LogError("❌ Missing CosmosDB connection string.");
+            throw new Exception("COSMOSDB_CONNECTION_STRING is not set.");
+        }
+
+        if (string.IsNullOrEmpty(databaseName) || string.IsNullOrEmpty(containerName))
+        {
+            _logger.LogError("❌ Missing CosmosDB database or container name.");
+            throw new Exception("COSMOSDB_DATABASE_NAME or COSMOSDB_CONTAINER_NAME is not set.");
+        }
 
         try
         {
-            _logger.LogInformation($"Function started at {timestamp}");
-
-            var metadata = new
-            {
-                timestamp,
-                executionDurationMs = 0, // Will update after execution
-                instanceId = Environment.MachineName,
-                functionName = "BlobUploaderFunction",
-                status = "Success"
-            };
-
-            var blobContainer = _blobServiceClient.GetBlobContainerClient(Environment.GetEnvironmentVariable("AZURE_STORAGE_CONTAINER"));
-            await blobContainer.CreateIfNotExistsAsync(PublicAccessType.None);
-
-            BlobClient blobClient = blobContainer.GetBlobClient(fileName);
-            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(metadata)));
-
-            await blobClient.UploadAsync(stream, overwrite: true);
-
-            stopwatch.Stop();
-            _logger.LogInformation($"File {fileName} uploaded successfully in {stopwatch.ElapsedMilliseconds} ms.");
+            _cosmosClient = new CosmosClient(cosmosDbConnectionString);
+            _container = _cosmosClient.GetDatabase(databaseName).GetContainer(containerName);
+            _logger.LogInformation("✅ Successfully connected to CosmosDB.");
         }
         catch (Exception ex)
         {
-            stopwatch.Stop();
-            _logger.LogError($"Error uploading file: {ex.Message}");
+            _logger.LogError($"❌ Failed to initialize CosmosDB client: {ex.Message}");
+            throw;
         }
     }
 
+    [Function("CosmosDbUploaderFunction")]
+    public async Task Run([TimerTrigger("0 */5 * * * *")] TimerInfo timer)
+    {
+        _logger.LogInformation($"Function executed at: {DateTime.UtcNow}");
+
+        var data = new Dictionary<string, object>
+        {
+            { "id", Guid.NewGuid().ToString() }, // Required by CosmosDB
+            { "timestamp", DateTime.UtcNow.ToString("o") }, // ISO 8601 format
+            { "partitionKey", "uploads" } // Define partition key
+        };
+
+        try
+        {
+            await _container.CreateItemAsync(data, new PartitionKey("uploads"));
+            _logger.LogInformation("✅ Successfully uploaded data to CosmosDB.");
+        }
+        catch (CosmosException cosmosEx)
+        {
+            _logger.LogError($"❌ CosmosDB Error: {cosmosEx.StatusCode} - {cosmosEx.Message}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"❌ General Error: {ex.Message}");
+        }
+    }
 }

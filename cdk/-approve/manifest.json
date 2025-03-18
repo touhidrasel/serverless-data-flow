@@ -1,0 +1,16 @@
+{
+  "stacks": {
+    "storage-stack": {
+      "annotations": [
+      ],
+      "constructPath": "storage-stack",
+      "dependencies": [
+      ],
+      "name": "storage-stack",
+      "stackMetadataPath": "stacks\\storage-stack\\metadata.json",
+      "synthesizedStackPath": "stacks\\storage-stack\\cdk.tf.json",
+      "workingDirectory": "stacks\\storage-stack"
+    }
+  },
+  "version": "0.20.11"
+}

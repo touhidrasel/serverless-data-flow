@@ -1,0 +1,202 @@
+{
+  "//": {
+    "metadata": {
+      "backend": "local",
+      "stackName": "storage-stack",
+      "version": "0.20.11"
+    },
+    "outputs": {
+      "storage-stack": {
+        "applicationInsightsKey": "applicationInsightsKey",
+        "cosmosDbConnectionString": "cosmosDbConnectionString",
+        "functionAppName": "functionAppName",
+        "storageAccountName": "storageAccountName"
+      }
+    }
+  },
+  "output": {
+    "applicationInsightsKey": {
+      "sensitive": true,
+      "value": "${azurerm_application_insights.AppInsights.connection_string}"
+    },
+    "cosmosDbConnectionString": {
+      "sensitive": true,
+      "value": "${azurerm_cosmosdb_account.CosmosDBAccount.primary_key}"
+    },
+    "functionAppName": {
+      "value": "${azurerm_function_app.FunctionApp.name}"
+    },
+    "storageAccountName": {
+      "value": "${azurerm_storage_account.StorageAccount.name}"
+    }
+  },
+  "provider": {
+    "azurerm": [
+      {
+        "features": {
+        },
+        "subscription_id": "363ebc7f-2967-4068-96a0-8b83df1e0110"
+      }
+    ]
+  },
+  "resource": {
+    "azurerm_application_insights": {
+      "AppInsights": {
+        "//": {
+          "metadata": {
+            "path": "storage-stack/AppInsights",
+            "uniqueId": "AppInsights"
+          }
+        },
+        "application_type": "web",
+        "location": "${azurerm_resource_group.ResourceGroup.location}",
+        "name": "cosmosdb-function-insights",
+        "resource_group_name": "${azurerm_resource_group.ResourceGroup.name}"
+      }
+    },
+    "azurerm_cosmosdb_account": {
+      "CosmosDBAccount": {
+        "//": {
+          "metadata": {
+            "path": "storage-stack/CosmosDBAccount",
+            "uniqueId": "CosmosDBAccount"
+          }
+        },
+        "consistency_policy": {
+          "consistency_level": "Session"
+        },
+        "geo_location": [
+          {
+            "failover_priority": 0,
+            "location": "${azurerm_resource_group.ResourceGroup.location}"
+          }
+        ],
+        "kind": "GlobalDocumentDB",
+        "location": "${azurerm_resource_group.ResourceGroup.location}",
+        "name": "pm-cosmosdb",
+        "offer_type": "Standard",
+        "resource_group_name": "${azurerm_resource_group.ResourceGroup.name}"
+      }
+    },
+    "azurerm_cosmosdb_sql_container": {
+      "CosmosDBContainer": {
+        "//": {
+          "metadata": {
+            "path": "storage-stack/CosmosDBContainer",
+            "uniqueId": "CosmosDBContainer"
+          }
+        },
+        "account_name": "${azurerm_cosmosdb_account.CosmosDBAccount.name}",
+        "database_name": "${azurerm_cosmosdb_sql_database.CosmosDBDatabase.name}",
+        "name": "pm-container",
+        "partition_key_paths": [
+          "/partitionKey"
+        ],
+        "partition_key_version": 2,
+        "resource_group_name": "${azurerm_resource_group.ResourceGroup.name}"
+      }
+    },
+    "azurerm_cosmosdb_sql_database": {
+      "CosmosDBDatabase": {
+        "//": {
+          "metadata": {
+            "path": "storage-stack/CosmosDBDatabase",
+            "uniqueId": "CosmosDBDatabase"
+          }
+        },
+        "account_name": "${azurerm_cosmosdb_account.CosmosDBAccount.name}",
+        "name": "pm-database",
+        "resource_group_name": "${azurerm_resource_group.ResourceGroup.name}"
+      }
+    },
+    "azurerm_function_app": {
+      "FunctionApp": {
+        "//": {
+          "metadata": {
+            "path": "storage-stack/FunctionApp",
+            "uniqueId": "FunctionApp"
+          }
+        },
+        "app_service_plan_id": "${azurerm_service_plan.ServicePlan.id}",
+        "app_settings": {
+          "APPLICATIONINSIGHTS_CONNECTION_STRING": "${azurerm_application_insights.AppInsights.connection_string}",
+          "AzureWebJobsStorage": "${azurerm_storage_account.StorageAccount.primary_connection_string}",
+          "COSMOSDB_CONNECTION_STRING": "${azurerm_cosmosdb_account.CosmosDBAccount.primary_key}",
+          "COSMOSDB_CONTAINER_NAME": "${azurerm_cosmosdb_sql_container.CosmosDBContainer.name}",
+          "COSMOSDB_DATABASE_NAME": "${azurerm_cosmosdb_sql_database.CosmosDBDatabase.name}",
+          "FUNCTIONS_EXTENSION_VERSION": "~4",
+          "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated"
+        },
+        "location": "${azurerm_resource_group.ResourceGroup.location}",
+        "name": "cosmosdb-function",
+        "resource_group_name": "${azurerm_resource_group.ResourceGroup.name}",
+        "site_config": {
+          "always_on": false,
+          "linux_fx_version": "DOTNET-ISOLATED|8.0"
+        },
+        "storage_account_access_key": "${azurerm_storage_account.StorageAccount.primary_access_key}",
+        "storage_account_name": "${azurerm_storage_account.StorageAccount.name}"
+      }
+    },
+    "azurerm_resource_group": {
+      "ResourceGroup": {
+        "//": {
+          "metadata": {
+            "path": "storage-stack/ResourceGroup",
+            "uniqueId": "ResourceGroup"
+          }
+        },
+        "lifecycle": {
+          "prevent_destroy": false
+        },
+        "location": "Germany West Central",
+        "name": "cosmos-storage-rg"
+      }
+    },
+    "azurerm_service_plan": {
+      "ServicePlan": {
+        "//": {
+          "metadata": {
+            "path": "storage-stack/ServicePlan",
+            "uniqueId": "ServicePlan"
+          }
+        },
+        "location": "${azurerm_resource_group.ResourceGroup.location}",
+        "name": "cosmosdb-consumption-plan",
+        "os_type": "Linux",
+        "resource_group_name": "${azurerm_resource_group.ResourceGroup.name}",
+        "sku_name": "Y1"
+      }
+    },
+    "azurerm_storage_account": {
+      "StorageAccount": {
+        "//": {
+          "metadata": {
+            "path": "storage-stack/StorageAccount",
+            "uniqueId": "StorageAccount"
+          }
+        },
+        "account_replication_type": "LRS",
+        "account_tier": "Standard",
+        "infrastructure_encryption_enabled": true,
+        "location": "${azurerm_resource_group.ResourceGroup.location}",
+        "min_tls_version": "TLS1_2",
+        "name": "pmfuncstorage6641",
+        "resource_group_name": "${azurerm_resource_group.ResourceGroup.name}"
+      }
+    }
+  },
+  "terraform": {
+    "backend": {
+      "local": {
+        "path": "C:\\development\\blob-temp-storage\\cdk\\terraform.storage-stack.tfstate"
+      }
+    },
+    "required_providers": {
+      "azurerm": {
+        "source": "azurerm",
+        "version": "4.23.0"
+      }
+    }
+  }
+}
