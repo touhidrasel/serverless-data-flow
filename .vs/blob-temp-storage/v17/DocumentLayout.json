@@ -32,7 +32,7 @@
               "RelativeDocumentMoniker": "function\\BlobUploaderFunction.cs",
               "ToolTip": "C:\\development\\blob-temp-storage\\function\\BlobUploaderFunction.cs",
               "RelativeToolTip": "function\\BlobUploaderFunction.cs",
-              "ViewState": "AgIAAA8AAAAAAAAAAAAAAB8AAAAJAAAAAAAAAA==",
+              "ViewState": "AgIAABUAAAAAAAAAAAAAAC8AAAAuAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-03-13T21:56:48.577Z",
               "EditorCaption": ""
@@ -47,8 +47,7 @@
               "RelativeToolTip": "cdk\\src\\storage-stack.ts",
               "ViewState": "AgIAAAYAAAAAAAAAAAAEwGUAAAArAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
-              "WhenOpened": "2025-03-13T21:22:12.518Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-03-13T21:22:12.518Z"
             },
             {
               "$type": "Document",

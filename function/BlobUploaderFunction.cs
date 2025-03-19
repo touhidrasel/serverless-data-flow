@@ -45,7 +45,7 @@ public class CosmosDbUploaderFunction
     }
 
     [Function("CosmosDbUploaderFunction")]
-    public async Task Run([TimerTrigger("0 */5 * * * *")] TimerInfo timer)
+    public async Task Run([TimerTrigger("0 */65 * * * *")] TimerInfo timer)
     {
         _logger.LogInformation($"Function executed at: {DateTime.UtcNow}");
 
